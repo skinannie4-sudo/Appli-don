@@ -1,329 +1,336 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr-CA">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boîte de Réception - DonObjet Canada</title>
+    <title>DonObjet Canada - Don de Véhicules</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f7f7f7; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
-        header { background: #222; color: white; padding: 1.2rem; text-align: center; font-size: 1.4rem; font-weight: bold; }
-        .container { max-width: 800px; margin: 0 auto; padding: 1rem; flex: 1; }
-        .liste-conv { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
-        .conv-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid #eee; cursor: pointer; }
-        .conv-item:hover { background: #f8f9fa; }
-        .conv-mini-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; }
-        .conv-info { flex: 1; }
-        .conv-titre { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.2rem; }
-        .conv-apres { color: #666; font-size: 0.9rem; }
-
-        .zone-discussion { display: none; max-width: 700px; margin: 0 auto; background: white; flex: 1; flex-direction: column; min-height: 100vh; }
-        .entete { background: #e30a17; color: white; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
-        .retour { cursor: pointer; font-size: 1.3rem; }
-
-        .profil-objet-admin { text-align: center; padding: 2rem 1rem; border-bottom: 2px solid #f0f0f0; background: #fff8f8; }
-        .avatar-objet-admin { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 4px solid #e30a17; }
-        .titre-objet-admin { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.3rem; color: #b30000; }
-        .lieu-objet-admin { color: #666; margin-bottom: 0.5rem; font-style: italic; }
-        .categorie-objet-admin { display: inline-block; background: #e30a17; color: white; padding: 0.3rem 1rem; border-radius: 15px; font-weight: bold; font-size: 0.9rem; margin-bottom: 1rem; }
-
-        .messages { flex: 1; padding: 1rem; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 0.8rem; }
-        .msg { max-width: 75%; padding: 0.8rem 1rem; border-radius: 18px; font-size: 0.95rem; }
-        .msg.visiteur { background: #ddd; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .msg.reponse { background: #00b958; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .msg-img { max-width: 70%; border-radius: 12px; overflow: hidden; }
-        .msg-img.visiteur { align-self: flex-start; border-bottom-left-radius: 4px; }
-        .msg-img.reponse { align-self: flex-end; border-bottom-right-radius: 4px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { line-height: 1.6; color: #333; background-color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
+        :root {
+            --rouge-canada: #e30a17; --rouge-fonce: #b30000; --vert-envoi: #00b958;
+            --blanc: #ffffff; --gris-clair: #f8f9fa; --gris-moyen: #e2e6ea; --ombre: rgba(0,0,0,0.15);
+        }
+        header { background: var(--rouge-canada); color: var(--blanc); padding: 1rem 5%; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--blanc); text-decoration: none; }
+        nav ul { list-style: none; display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        nav a { color: var(--blanc); text-decoration: none; font-weight: 500; }
+        .hero { background: var(--rouge-fonce); color: var(--blanc); padding: 3rem 5%; text-align: center; }
+        .btn { background: var(--rouge-canada); color: var(--blanc); padding: 0.7rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: bold; border: 2px solid var(--blanc); display: inline-block; margin-top: 1rem; }
+        section { padding: 2rem 5%; max-width: 1200px; margin: auto; }
+        h2 { color: var(--rouge-fonce); border-bottom: 3px solid var(--rouge-canada); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h3 { margin: 2rem 0 1rem; color: #212529; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { background: #fff; border: 2px solid var(--gris-clair); border-radius: 10px; box-shadow: 0 3px 10px var(--ombre); overflow: hidden; }
+        .card-img { height: 180px; background: var(--gris-clair); overflow: hidden; }
+        .card-img img { width: 100%; height: 100%; object-fit: cover; }
+        .card-body { padding: 1.2rem; }
+        .localisation { color: #444; font-size: 0.95rem; margin: 0.4rem 0; }
+        .etat, .type { display: inline-block; background: var(--gris-clair); color: var(--rouge-fonce); border: 1px solid var(--rouge-canada); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem; margin: 0.3rem 0; }
+        .btn-discuter { display: block; width: 100%; background: var(--rouge-canada); color: white; border: none; padding: 0.75rem; border-radius: 6px; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; margin-top: 1rem; }
+        .btn-discuter:hover { background: var(--rouge-fonce); }
+        .page-discussion { display: none; max-width: 480px; margin: 0 auto; background: #ffffff; flex: 1; flex-direction: column; min-height: 100vh; }
+        .page-discussion.active { display: flex; }
+        .discussion-entete { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; }
+        .entete-gauche { display: flex; align-items: center; gap: 0.7rem; }
+        .retour { font-size: 1.5rem; cursor: pointer; color: #666; text-decoration: none; }
+        .nom-conv { font-weight: bold; font-size: 1.1rem; }
+        .profil-objet { text-align: center; padding: 2rem 1rem; border-bottom: 1px solid #f0f0f0; background: #fdfdfd; }
+        .avatar-objet { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--rouge-canada); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .titre-objet { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.3rem; color: #212529; }
+        .lieu-objet { color: #666; margin-bottom: 0.5rem; font-style: italic; }
+        .categorie-objet { display: inline-block; background: var(--rouge-canada); color: white; padding: 0.3rem 1rem; border-radius: 15px; font-size: 0.85rem; margin-bottom: 1rem; }
+        .invite { color: #888; font-size: 0.95rem; }
+        .barre-saisie { border-top: 1px solid #eee; padding: 0.8rem 1rem; background: #fff; display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
+        .champ-message { flex: 1; display: flex; align-items: center; background: #f5f5f5; border-radius: 24px; padding: 0.5rem 1rem; min-width: 200px; }
+        .champ-message input { flex: 1; border: none; background: transparent; outline: none; font-size: 1rem; padding: 0.5rem; min-width: 150px; }
+        .btn-plus { font-size: 1.6rem; font-weight: bold; color: #555; cursor: pointer; padding: 0 0.5rem; user-select: none; }
+        .btn-envoyer { width: 48px; height: 48px; border-radius: 50%; background-color: var(--vert-envoi); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); flex-shrink: 0; color: white; font-weight: bold; }
+        .btn-envoyer:hover { background-color: #00a84e; }
+        .messages { flex: 1; overflow-y: auto; padding: 1rem; background: #fafafa; display: flex; flex-direction: column; gap: 0.8rem; }
+        .msg { max-width: 75%; padding: 0.7rem 1rem; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; }
+        .msg.envoye { background: var(--vert-envoi); color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+        .msg.recu { background: #e9ecef; color: #222; align-self: flex-start; border-bottom-left-radius: 5px; }
+        .msg-img { max-width: 70%; border-radius: 12px; overflow: hidden; position: relative; }
+        .msg-img.envoye { align-self: flex-end; border-bottom-right-radius: 5px; }
+        .msg-img.recu { align-self: flex-start; border-bottom-left-radius: 5px; }
         .msg-img img { width: 100%; height: auto; display: block; }
-
-        .barre-reponse { display: flex; border-top: 1px solid #eee; padding: 0.8rem; gap: 0.5rem; align-items: center; }
-        .btn-plus-rep { font-size: 1.6rem; font-weight: bold; color: #555; cursor: pointer; padding: 0 0.5rem; user-select: none; }
-        .barre-reponse input[type="text"] { flex: 1; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 1rem; }
-        .btn-repondre { background: #00b958; color: white; border: none; padding: 0 1.5rem; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        #input-photo-rep { display: none; }
-        .apercu-rep { display: flex; gap: 8px; padding: 0.5rem 1rem; background: #fafafa; border-top: 1px solid #eee; }
-        .apercu-rep img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 2px solid #ddd; }
-
-        /* ✅ PIED DE PAGE + LANGUES */
-        footer {
-            background-color: #e30a17;
-            color: white;
-            text-align: center;
-            padding: 1.5rem 5%;
-            margin-top: auto;
-        }
-        .footer-logo {
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin-bottom: 0.8rem;
-        }
-        .feuille {
-            font-size: 1.6rem;
-            margin-right: 0.5rem;
-        }
-        .langues {
-            margin-top: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .lang-btn {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid white;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        .lang-btn:hover, .lang-btn.active {
-            background: white;
-            color: #e30a17;
-        }
-        .copyright {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
+        .btn-copier { position: absolute; top: 4px; right: 6px; background: rgba(0,0,0,0.2); border: none; color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 10px; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+        .msg:hover .btn-copier { opacity: 1; }
+        .copie-confirme { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 0.6rem 1.2rem; border-radius: 20px; font-size: 0.9rem; z-index: 1000; display: none; }
+        .erreur-msg { background: #dc3545; color: white; padding: 0.5rem 1rem; text-align: center; display: none; position: sticky; top: 0; z-index: 10; }
+        #input-photo { display: none; }
+        .apercu { display: flex; gap: 8px; padding: 0.5rem 1rem; background: #fafafa; border-top: 1px solid #eee; flex-wrap: wrap; }
+        .apercu img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 2px solid #ddd; }
+        footer { background-color: var(--rouge-canada); color: white; text-align: center; padding: 1.5rem 5%; margin-top: auto; }
+        .footer-logo { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.8rem; }
+        .feuille { font-size: 1.6rem; margin-right: 0.5rem; }
+        .langues { margin-top: 1rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .lang-btn { background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .lang-btn:hover, .lang-btn.active { background: white; color: var(--rouge-canada); }
+        .copyright { margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; }
     </style>
 </head>
 <body>
+<div class="erreur-msg" id="erreurMsg"></div>
+<div class="copie-confirme" id="copieConfirme">✅ Copié !</div>
 
-<header>📬 Ma Boîte de Réception - DonObjet Canada</header>
-<div class="container">
-    <div class="liste-conv" id="liste-conversations"></div>
+<header>
+    <div class="header-container">
+        <a href="#" class="logo">🍁 DonObjet Canada</a>
+        <nav>
+            <ul>
+                <li><a href="#" onclick="afficherCatalogue()">Accueil</a></li>
+                <li><a href="#vehicules">Véhicules</a></li>
+                <li><a href="boite-reception.html" target="_blank">📩 Boîte de Réception</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div id="catalogue" style="flex: 1;">
+    <section class="hero">
+        <h1>🚗🚜🏕️ Don de Véhicules au Canada</h1>
+        <p>Trouvez ou donnez un véhicule gratuitement. Échangez en temps réel avec photos.</p>
+        <a href="#vehicules" class="btn">Voir les annonces</a>
+    </section>
+    <section id="vehicules">
+        <h2>📋 Véhicules disponibles</h2>
+
+        <h3>🚗 Voitures</h3>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img"><img src="https://i.ibb.co/8LyvjyRZ/W103477113-STANDARD-0.webp" alt="Voiture"></div>
+                <div class="card-body">
+                    <span class="type">🚗 Voiture</span>
+                    <h3>Berline standard</h3>
+                    <p class="localisation">📍 Montréal, QC</p>
+                    <span class="etat">Bon état</span>
+                    <button class="btn-discuter" onclick="ouvrirDiscussion('Voiture - Montréal', 'Berline standard', '📍 Montréal, QC', '🚗 Voiture', 'https://i.ibb.co/8LyvjyRZ/W103477113-STANDARD-0.webp')">💬 Contacter</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>🚜 Tracteurs</h3>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img"><img src="https://i.ibb.co/dwbHCqPZ/FB-IMG-1787787294065.jpg" alt="Tracteur"></div>
+                <div class="card-body">
+                    <span class="type">🚜 Tracteur</span>
+                    <h3>Tracteur agricole</h3>
+                    <p class="localisation">📍 Québec rural</p>
+                    <button class="btn-discuter" onclick="ouvrirDiscussion('Tracteur - Québec rural', 'Tracteur agricole', '📍 Québec rural', '🚜 Tracteur', 'https://i.ibb.co/dwbHCqPZ/FB-IMG-1787787294065.jpg')">💬 Contacter</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>🏕️ Camping-cars</h3>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img"><img src="https://i.ibb.co/qLQXGmrN/FB-IMG-1787786602726.jpg" alt="Camping-car"></div>
+                <div class="card-body">
+                    <span class="type">🏕️ Camping-car</span>
+                    <h3>Camping-car Confort</h3>
+                    <p class="localisation">📍 Québec</p>
+                    <button class="btn-discuter" onclick="ouvrirDiscussion('Camping-car - Québec', 'Camping-car Confort', '📍 Québec', '🏕️ Camping-car', 'https://i.ibb.co/qLQXGmrN/FB-IMG-1787786602726.jpg')">💬 Contacter</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img"><img src="https://i.ibb.co/20y8nP6x/FB-IMG-1787786988933.jpg" alt="Camping-car"></div>
+                <div class="card-body">
+                    <span class="type">🏕️ Camping-car</span>
+                    <h3>Camping-car Familial</h3>
+                    <p class="localisation">📍 Ontario</p>
+                    <button class="btn-discuter" onclick="ouvrirDiscussion('Camping-car - Ontario', 'Camping-car Familial', '📍 Ontario', '🏕️ Camping-car', 'https://i.ibb.co/20y8nP6x/FB-IMG-1787786988933.jpg')">💬 Contacter</button>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-<div class="zone-discussion" id="page-discussion">
-    <div class="entete">
-        <span class="retour" onclick="afficherListe()">←</span>
-        <span id="titre-conv"></span>
+<div id="discussion" class="page-discussion">
+    <div class="discussion-entete">
+        <div class="entete-gauche">
+            <a href="#" class="retour" onclick="afficherCatalogue()">← Retour</a>
+            <span class="nom-conv" id="titreDiscussion">Discussion</span>
+        </div>
     </div>
-
-    <div class="profil-objet-admin">
-        <img class="avatar-objet-admin" id="avatar-admin" src="" alt="Objet">
-        <div class="titre-objet-admin" id="titre-admin"></div>
-        <div class="lieu-objet-admin" id="lieu-admin"></div>
-        <span class="categorie-objet-admin" id="cat-admin"></span>
+    <div class="profil-objet">
+        <img class="avatar-objet" id="avatarObjet" src="" alt="Photo du véhicule">
+        <div class="titre-objet" id="titreObjet"></div>
+        <div class="lieu-objet" id="lieuObjet"></div>
+        <span class="categorie-objet" id="categorieObjet"></span>
+        <div class="invite">Échangez en direct avec photos 👋</div>
     </div>
-
-    <div class="messages" id="messages-conv"></div>
-    <div class="apercu-rep" id="apercu-rep" style="display:none;"></div>
-    <div class="barre-reponse">
-        <input type="file" id="input-photo-rep" accept="image/*">
-        <span class="btn-plus-rep" id="btn-plus-rep">+</span>
-        <input type="text" placeholder="Votre réponse..." id="champ-reponse">
-        <button class="btn-repondre" id="btn-repondre">Répondre</button>
+    <div class="messages" id="zoneMessages"></div>
+    <div class="apercu" id="apercuPhotos"></div>
+    <div class="barre-saisie">
+        <input type="file" id="input-photo" accept="image/*">
+        <div class="champ-message">
+            <input type="text" id="champMsg" placeholder="Message ou ajouter photo (+)...">
+            <span class="btn-plus" id="btnPlus">+</span>
+        </div>
+        <button class="btn-envoyer" id="btnEnvoyer">✉️</button>
     </div>
 </div>
 
-<!-- ✅ PIED DE PAGE AVEC LANGUES -->
 <footer>
     <div class="footer-logo"><span class="feuille">🍁</span> DonObjet Canada</div>
-    
     <div class="langues">
-        <button class="lang-btn active" onclick="changerLangueBoite('fr')">Français</button>
-        <button class="lang-btn" onclick="changerLangueBoite('en')">English</button>
-        <button class="lang-btn" onclick="changerLangueBoite('it')">Italiano</button>
+        <button class="lang-btn active" onclick="changerLangue('fr')">Français</button>
+        <button class="lang-btn" onclick="changerLangue('en')">English</button>
     </div>
-
-    <div class="copyright">© 2026 - Tous droits réservés</div>
+    <div class="copyright">© 2026 DonObjet Canada</div>
 </footer>
 
 <script>
-const donneesVehicules = {
-    "Voiture - Montréal": {
-        titre: "Berline standard",
-        lieu: "📍 Montréal, QC",
-        categorie: "🚗 Voiture",
-        img: "https://i.ibb.co/8LyvjyRZ/W103477113-STANDARD-0.webp"
-    },
-    "Tracteur - Québec rural": {
-        titre: "Tracteur agricole",
-        lieu: "📍 Québec rural",
-        categorie: "🚜 Tracteur",
-        img: "https://i.ibb.co/dwbHCqPZ/FB-IMG-1787787294065.jpg"
-    },
-    "Camping-car - Québec": {
-        titre: "Camping-car Confort",
-        lieu: "📍 Québec",
-        categorie: "🏕️ Camping-car",
-        img: "https://i.ibb.co/qLQXGmrN/FB-IMG-1787786602726.jpg"
-    },
-    "Camping-car - Ontario": {
-        titre: "Camping-car Familial",
-        lieu: "📍 Ontario",
-        categorie: "🏕️ Camping-car",
-        img: "https://i.ibb.co/20y8nP6x/FB-IMG-1787786988933.jpg"
-    }
+// ========== CONFIGURATION FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyCn26mfnklXnZYK29VAR9jnfOgaj1bTqwc",
+  authDomain: "donobjet-canada.firebaseapp.com",
+  databaseURL: "https://donobjet-canada-default-rtdb.firebaseio.com/",
+  projectId: "donobjet-canada",
+  storageBucket: "donobjet-canada.firebasestorage.app",
+  messagingSenderId: "709093368903",
+  appId: "1:709093368903:web:c88934eb71a4d9a9cb7d62"
+};
+// ===========================================
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
+
+const traductions = {
+    fr: { placeholder: "Message ou ajouter photo (+)...", copie: "✅ Copié !", erreur: "⚠️ Erreur d'envoi" },
+    en: { placeholder: "Message or add photo (+)...", copie: "✅ Copied!", erreur: "⚠️ Send error" }
 };
 
-// ✅ TRADUCTIONS BOÎTE
-const tradBoite = {
-    fr: {
-        titreListe: "📬 Ma Boîte de Réception - DonObjet Canada",
-        aucunMsg: "Aucun message pour l'instant.",
-        dernier: "Dernier",
-        repondre: "Répondre",
-        placeholder: "Votre réponse..."
-    },
-    en: {
-        titreListe: "📬 My Inbox - DonObjet Canada",
-        aucunMsg: "No messages yet.",
-        dernier: "Last",
-        repondre: "Reply",
-        placeholder: "Your reply..."
-    },
-    it: {
-        titreListe: "📬 La mia casella - DonObjet Canada",
-        aucunMsg: "Nessun messaggio per ora.",
-        dernier: "Ultimo",
-        repondre: "Rispondi",
-        placeholder: "La tua risposta..."
-    }
-};
+let langue = "fr";
+let conversationId = null;
+let fichiersSelectionnes = [];
+let refMessages = null;
 
-let convEnCours = "";
-let photosRep = [];
-let langueBoite = "fr";
+const champMsg = document.getElementById('champMsg');
+const zoneMsg = document.getElementById('zoneMessages');
+const apercuDiv = document.getElementById('apercuPhotos');
+const erreurDiv = document.getElementById('erreurMsg');
 
-function changerLangueBoite(lang) {
-    langueBoite = lang;
-    document.documentElement.lang = lang;
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+function afficherErreur(txt) {
+    erreurDiv.textContent = txt; erreurDiv.style.display = 'block';
+    setTimeout(() => erreurDiv.style.display = 'none', 3000);
+}
+
+function changerLangue(lg) {
+    langue = lg; document.documentElement.lang = lg;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
-    
-    const t = tradBoite[lang];
-    document.querySelector('header').textContent = t.titreListe;
-    document.getElementById('btn-repondre').textContent = t.repondre;
-    document.getElementById('champ-reponse').placeholder = t.placeholder;
-    chargerListe();
+    champMsg.placeholder = traductions[lg].placeholder;
 }
 
-function chargerListe() {
-    const liste = document.getElementById('liste-conversations');
-    const stock = JSON.parse(localStorage.getItem('messages_donobjet') || '{}');
-    const t = tradBoite[langueBoite];
-    liste.innerHTML = '';
-    if (Object.keys(stock).length === 0) {
-        liste.innerHTML = `<div class="conv-item"><span>${t.aucunMsg}</span></div>`;
-        return;
-    }
-    for (let titre in stock) {
-        const dernier = stock[titre][stock[titre].length - 1];
-        const vehicule = donneesVehicules[titre] || { img: "", titre: titre };
-        const div = document.createElement('div');
-        div.className = 'conv-item';
-        let resume = dernier.image ? '[Photo]' : dernier.texte.substring(0, 45) + '...';
-        div.innerHTML = `
-            <img class="conv-mini-img" src="${vehicule.img}" alt="">
-            <div class="conv-info">
-                <div class="conv-titre">${titre}</div>
-                <div class="conv-apres">${t.dernier} : ${resume}</div>
-            </div>
-        `;
-        div.onclick = () => ouvrirConv(titre);
-        liste.appendChild(div);
-    }
+function afficherCatalogue() {
+    document.getElementById('catalogue').style.display = 'block';
+    document.getElementById('discussion').classList.remove('active');
+    if (refMessages) refMessages.off(); refMessages = null; conversationId = null;
 }
 
-function afficherListe() {
-    document.querySelector('.container').style.display = 'block';
-    document.getElementById('page-discussion').style.display = 'none';
-    chargerListe();
+function ouvrirDiscussion(id, titre, lieu, cat, img) {
+    event.preventDefault();
+    conversationId = id; fichiersSelectionnes = [];
+    apercuDiv.innerHTML = ''; apercuDiv.style.display = 'none';
+    document.getElementById('titreDiscussion').textContent = id;
+    document.getElementById('avatarObjet').src = img;
+    document.getElementById('titreObjet').textContent = titre;
+    document.getElementById('lieuObjet').textContent = lieu;
+    document.getElementById('categorieObjet').textContent = cat;
+    document.getElementById('catalogue').style.display = 'none';
+    document.getElementById('discussion').classList.add('active');
+    ecouterMessages();
 }
 
-function ouvrirConv(titre) {
-    convEnCours = titre;
-    photosRep = [];
-    document.getElementById('apercu-rep').innerHTML = '';
-    document.getElementById('apercu-rep').style.display = 'none';
-    
-    const vehicule = donneesVehicules[titre] || { titre: titre, lieu: "", categorie: "", img: "" };
-    document.getElementById('titre-conv').textContent = titre;
-    document.getElementById('avatar-admin').src = vehicule.img;
-    document.getElementById('titre-admin').textContent = vehicule.titre;
-    document.getElementById('lieu-admin').textContent = vehicule.lieu;
-    document.getElementById('cat-admin').textContent = vehicule.categorie;
-
-    document.querySelector('.container').style.display = 'none';
-    document.getElementById('page-discussion').style.display = 'flex';
-    afficherMessages();
-}
-
-function afficherMessages() {
-    const zone = document.getElementById('messages-conv');
-    const stock = JSON.parse(localStorage.getItem('messages_donobjet') || '{}');
-    const liste = stock[convEnCours] || [];
-    zone.innerHTML = '';
-    liste.forEach(m => {
-        if (m.image) {
-            const div = document.createElement('div');
-            div.className = 'msg-img ' + (m.expediteur === 'visiteur' ? 'visiteur' : 'reponse');
-            div.innerHTML = `<img src="${m.image}" alt="photo">`;
-            zone.appendChild(div);
-        } else if (m.texte) {
-            const div = document.createElement('div');
-            div.className = 'msg ' + (m.expediteur === 'visiteur' ? 'visiteur' : 'reponse');
-            div.textContent = m.texte;
-            zone.appendChild(div);
-        }
+function copierTexte(texte, bouton) {
+    navigator.clipboard.writeText(texte).then(() => {
+        document.getElementById('copieConfirme').textContent = traductions[langue].copie;
+        document.getElementById('copieConfirme').style.display = 'block';
+        setTimeout(() => document.getElementById('copieConfirme').style.display = 'none', 1500);
+        if (bouton) { const t = bouton.textContent; bouton.textContent = '✓'; setTimeout(() => bouton.textContent = t, 1000); }
     });
-    zone.scrollTop = zone.scrollHeight;
 }
 
-document.getElementById('btn-plus-rep').addEventListener('click', () => {
-    document.getElementById('input-photo-rep').click();
-});
+function ecouterMessages() {
+    zoneMsg.innerHTML = '';
+    if (!conversationId) return;
+    refMessages = db.ref('conversations/' + conversationId);
+    refMessages.on('child_added', snap => {
+        const m = snap.val();
+        if (m.imageURL) {
+            const d = document.createElement('div');
+            d.className = `msg-img ${m.moi ? 'envoye' : 'recu'}`;
+            d.innerHTML = `<img src="${m.imageURL}" alt="photo">`;
+            zoneMsg.appendChild(d);
+        } else if (m.texte) {
+            const d = document.createElement('div');
+            d.className = `msg ${m.moi ? 'envoye' : 'recu'}`;
+            d.textContent = m.texte;
+            const b = document.createElement('button'); b.className = 'btn-copier'; b.textContent = '📋';
+            b.onclick = () => copierTexte(m.texte, b); d.appendChild(b);
+            zoneMsg.appendChild(d);
+        }
+        zoneMsg.scrollTop = zoneMsg.scrollHeight;
+    });
+}
 
-document.getElementById('input-photo-rep').addEventListener('change', e => {
+// Gestion sélection fichiers
+document.getElementById('btnPlus').addEventListener('click', () => document.getElementById('input-photo').click());
+document.getElementById('input-photo').addEventListener('change', e => {
     const fichiers = Array.from(e.target.files);
     if (!fichiers.length) return;
-    const apercu = document.getElementById('apercu-rep');
     fichiers.forEach(f => {
+        fichiersSelectionnes.push(f);
         const reader = new FileReader();
         reader.onload = evt => {
-            photosRep.push(evt.target.result);
-            const img = document.createElement('img');
-            img.src = evt.target.result;
-            apercu.appendChild(img);
+            const img = document.createElement('img'); img.src = evt.target.result;
+            apercuDiv.appendChild(img); apercuDiv.style.display = 'flex';
         };
         reader.readAsDataURL(f);
     });
-    apercu.style.display = 'flex';
     e.target.value = '';
 });
 
-function repondre() {
-    const champ = document.getElementById('champ-reponse');
-    const texte = champ.value.trim();
-    if ((!texte && !photosRep.length) || !convEnCours) return;
+// Envoi message et photos vers Firebase
+async function envoyerMessage() {
+    const texte = champMsg.value.trim();
+    if (!texte && !fichiersSelectionnes.length) return;
+    if (!conversationId || !refMessages) return;
 
-    const stock = JSON.parse(localStorage.getItem('messages_donobjet') || '{}');
-    if (!stock[convEnCours]) stock[convEnCours] = [];
-
-    if (texte) {
-        stock[convEnCours].push({ expediteur: 'proprietaire', texte: texte, image: null });
+    try {
+        // Envoyer texte
+        if (texte) {
+            await refMessages.push({ texte, moi: true, timestamp: Date.now() });
+        }
+        // Envoyer chaque fichier image sur Storage
+        for (const fichier of fichiersSelectionnes) {
+            const nomFichier = `photos/${conversationId}/${Date.now()}_${fichier.name}`;
+            const refStockage = storage.ref(nomFichier);
+            const televersement = await refStockage.put(fichier);
+            const urlImage = await televersement.ref.getDownloadURL();
+            await refMessages.push({ imageURL: urlImage, moi: true, timestamp: Date.now() });
+        }
+        // Réinitialiser
+        champMsg.value = ''; fichiersSelectionnes = [];
+        apercuDiv.innerHTML = ''; apercuDiv.style.display = 'none';
+    } catch (erreur) {
+        console.error("Erreur envoi :", erreur);
+        afficherErreur(traductions[langue].erreur);
     }
-    photosRep.forEach(src => {
-        stock[convEnCours].push({ expediteur: 'proprietaire', texte: null, image: src });
-    });
-
-    localStorage.setItem('messages_donobjet', JSON.stringify(stock));
-    champ.value = '';
-    photosRep = [];
-    document.getElementById('apercu-rep').innerHTML = '';
-    document.getElementById('apercu-rep').style.display = 'none';
-    afficherMessages();
 }
 
-document.getElementById('btn-repondre').addEventListener('click', repondre);
-document.getElementById('champ-reponse').addEventListener('keydown', e => { if (e.key === 'Enter') repondre(); });
-
-chargerListe();
-setInterval(chargerListe, 8000);
+document.getElementById('btnEnvoyer').addEventListener('click', envoyerMessage);
+champMsg.addEventListener('keydown', e => { if (e.key === 'Enter') envoyerMessage(); });
+window.addEventListener('load', afficherCatalogue);
 </script>
 </body>
 </html>
